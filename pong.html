@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Gra w ponga</title>
+  </head>
+  <body>
+    <div id="container">
+      <div id="info">
+        <p id="score"></p>
+        <p id="lifes"></p>
+      </div>
+      <canvas id="myCanvas" width="400" height="600"></canvas>
+      <p id="instructions">Kieruj rakietką za pomocą myszki.</p>
+    </div>
+    <button class="hidden">Koniec gry! Twój wynik to: <span id="scoreVal"></span>. </br>Kliknij, aby zagrać ponownie.</button>
+    <script>
+      const score = document.getElementById("score");
+      const lifes = document.getElementById("lifes");
+      const canvas = document.getElementById("myCanvas");
+      const body = document.body;
+      const button = document.querySelector("button");
+      const scoreVal = document.getElementById("scoreVal");
+      const ctx = canvas.getContext("2d");
+      let gameOver = false;
+     
+      body.style.backgroundColor = "#1E3C72";
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "white";
+      ctx.fillStyle = "#171F3A";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
+      //paletka idzie za myszką
+      document.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        let mousePosition = event.clientX - rect.left;
+        paddleX = mousePosition - paddleWidth / 2;
+
+        if (paddleX < 5) {
+          paddleX = 5;
+        }
+        if (paddleX + paddleWidth > canvas.width - 5) {
+          paddleX = canvas.width - paddleWidth - 5;
+        }
+      });
+
+      canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault()
+        const rect = canvas.getBoundingClientRect();
+        let touch = e.touches[0];
+        let touchX = touch.clientX - rect.left;
+        paddleX = touchX - paddleWidth / 2;
+
+        if (paddleX < 5) {
+          paddleX = 5;
+        }
+        if (paddleX + paddleWidth > canvas.width - 5) {
+          paddleX = canvas.width - paddleWidth - 5;
+        }
+      });
+      //piłka porusza się po canvasie
+
+      let paddleWidth = 100;
+      let paddleHeight = 10;
+      let paddleX = canvas.width / 2 - paddleWidth / 2;
+      let paddleY = canvas.height - 30;
+
+      class Ball  {
+        constructor() {
+          this.x = canvas.width / 2;
+          this.y = canvas.height / 2;
+          this.radius = 10;
+          this.speed = Math.random() * 3 + 2;
+          let angle = (Math.random()*Math.PI/2) - (Math.PI/4);
+        this.dx = this.speed * Math.sin(angle);
+    this.dy = -Math.abs(this.speed * Math.cos(angle));
+          this.color = this.getRandomHexColor();
+        }
+getRandomHexColor() {
+    const hex = Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+    return `#${hex}`;
+}
+        createBall(){
+             ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+        
+        }
+        collisionWalls() {
+          if (this.x + this.dx > canvas.width - this.radius || this.x + this.dx < this.radius) {
+            this.dx = -this.dx;
+          }
+          if (this.y + this.dy < this.radius) {
+            this.dy = -this.dy;
+          }
+        }
+        collisionPaddle() {
+          if (this.y + this.dy > paddleY - 10 && this.x > paddleX && this.x < paddleX + paddleWidth) {
+            this.dy = -this.dy;
+            scoreValue += 10;
+            score.innerHTML = `Wynik: ${scoreValue}`;
+            if (scoreValue % 50 ===0){
+                balls.push(new Ball());
+            }
+          }
+        }
+        resetBall(){
+    return this.y + this.dy > canvas.height - 10;
+}
+update(){
+    this.createBall();
+    this.x+=this.dx;
+    this.y+=this.dy;
+    this.collisionWalls();
+    this.collisionPaddle();
+    return this.resetBall();
+}
+      };
+      let balls = [new Ball()];
+        let scoreValue = 0;
+      score.innerHTML = `Wynik: ${scoreValue}`;
+      let lifesValue = 3;
+      lifes.innerHTML = `Życia: ${lifesValue}`;
+
+      function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#171F3A";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeRect(0.5, 0.5, canvas.width - 1, canvas.height - 1);
+        if (gameOver) return;
+        ctx.fillStyle="#4ECDC4";
+        ctx.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
+       for (let i = balls.length - 1; i >= 0; i--) {
+    const dead = balls[i].update();
+    if (dead) {
+        balls.splice(i, 1); 
+    }
+}
+if (balls.length === 0 && lifesValue > 0) {
+    lifesValue -= 1;     
+    balls.push(new Ball());
+} else if (balls.length === 0 && lifesValue <= 0) {
+    gameOver = true;
+    scoreVal.textContent = scoreValue;
+    showButton();
+}
+        lifes.innerHTML = `Życia: ${lifesValue}`;
+requestAnimationFrame(loop)
+      }
+      loop();
+     
+      function showButton(){
+        button.classList.remove("hidden");
+           button.addEventListener("click", () => {
+                document.location.reload();
+              });
+
+      }
+    </script>
+  </body>
+</html>
